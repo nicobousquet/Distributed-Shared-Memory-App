@@ -1,21 +1,5 @@
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
-#include <poll.h>
-#include <signal.h>
 
 
 /* autres includes (eventuellement) */

@@ -1,5 +1,11 @@
 #include "common_impl.h"
 #include <errno.h>
+#include <stdio.h>
+#include <netdb.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
 
 int dsm_send(int dest, void *buf, size_t size, int flag) {
     int num_send = 0;

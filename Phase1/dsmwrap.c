@@ -1,4 +1,12 @@
+#define _GNU_SOURCE
+
 #include "common_impl.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 int main(int argc, char **argv) {
     /* processus intermediaire pour "nettoyer" */

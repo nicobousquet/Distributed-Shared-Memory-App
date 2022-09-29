@@ -1,4 +1,15 @@
 #include "common_impl.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <poll.h>
+#include <signal.h>
 
 /* variables globales */
 

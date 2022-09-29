@@ -238,8 +238,12 @@ int main(int argc, char *argv[]) {
                 close(fd_err[0]);
                 dup(fd_err[1]);
                 close(fd_err[1]);
+                char dsmwrap[MAX_STR];
+                memset(dsmwrap, 0, MAX_STR);
+                strncpy(dsmwrap, argv[0], strlen(argv[0]) - strlen("dsmexec"));
+                strcat(dsmwrap, "dsmwrap");
                 /* Creation du tableau d'arguments pour le ssh */
-                char *args[5] = {"ssh", proc_array[i].connect_info.machine, "dsmwrap", hostname, port};
+                char *args[5] = {"ssh", proc_array[i].connect_info.machine, dsmwrap, hostname, port};
                 char **newargv = malloc((argc + 4) * sizeof(char *));
                 newargv = fill_new_argv(newargv, args, argc, argv);
                 /* jump to new prog : */

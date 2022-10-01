@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
     char *hostname = argv[1];
     char *connecting_port = argv[2];
     sfd = socket_connect(hostname, connecting_port, sfd);
-
     //on définit la variable d'environnement DSMEXEC_FD
     char DSMEXEC_FD[MAX_STR];
     sprintf(DSMEXEC_FD, "DSMEXEC_FD=%i", sfd);
@@ -40,7 +39,6 @@ int main(int argc, char **argv) {
     dsm_send(sfd, &pid, sizeof(pid_t), 0);
     //le processus met dans le tube son pid pour que le lanceur puisse lier ses tubes avec son processus
     write(STDOUT_FILENO, &pid, sizeof(pid_t));
-
     /* Creation de la socket d'ecoute pour les */
     /* connexions avec les autres processus dsm */
     int client_fd = create_server_socket(); //connfd;
@@ -65,7 +63,6 @@ int main(int argc, char **argv) {
     }
     args[argc - 3] = NULL;
     char *arge[] = {MASTER_FD, DSMEXEC_FD, NULL};
-    fflush(stdout);
     if (execvpe(argv[3], args, arge) == -1) {
         perror("execvpe");
     }

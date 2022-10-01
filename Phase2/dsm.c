@@ -1,4 +1,15 @@
 #include "dsm.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <string.h>
+#include <netdb.h>
+#include <poll.h>
+#include <semaphore.h>
 
 int DSM_NODE_NUM; /* nombre de processus dsm */
 int DSM_NODE_ID;  /* rang (= numero) du processus */
@@ -227,7 +238,9 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
         dsm_handler(page_addr);
     } else {
         /* SIGSEGV normal : ne rien faire*/
+        return;
     }
+    return;
 }
 
 int socket_connect(int sfd, char *port, char *machine) {
@@ -313,7 +326,6 @@ char *dsm_init(int argc, char *argv[]) {
             count++;
         }
     }
-
     //création socket d'écoute
     int fd;
     struct sockaddr_in server_addr;
@@ -334,14 +346,12 @@ char *dsm_init(int argc, char *argv[]) {
             POLLFDS[i].revents = -1;
         }
     }
-
     /* Allocation des pages en tourniquet */
     for (index = 0; index < PAGE_NUMBER; index++) {
         if ((index % DSM_NODE_NUM) == DSM_NODE_ID)
             dsm_alloc_page(index);
         dsm_change_info(index, WRITE, index % DSM_NODE_NUM);
     }
-
     /* mise en place du traitant de SIGSEGV */
     act.sa_flags = SA_SIGINFO | SA_RESTART;
     act.sa_sigaction = segv_handler;
@@ -370,13 +380,10 @@ void dsm_finalize(void) {
     while (PROCS_FINALIZED != DSM_NODE_NUM) {
         toto++;
     }
-
     //on détruit le thread d'écoute
-    fflush(stdout);
-    pthread_kill(comm_daemon, SIGKILL);
+    pthread_cancel(comm_daemon);
     void *retval;
     pthread_join(comm_daemon, &retval);
-
     /* fermer proprement les connexions avec les autres processus */
     for (int i = 0; i < DSM_NODE_NUM; i++) {
         if (POLLFDS[i].fd != -1) {
@@ -393,7 +400,6 @@ void dsm_finalize(void) {
             PROC_ARRAY[i].fd = -1;
         }
     }
-
     free(PROC_ARRAY);
     free(POLLFDS);
     return;

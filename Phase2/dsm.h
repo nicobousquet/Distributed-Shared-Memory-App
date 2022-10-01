@@ -1,21 +1,5 @@
 #define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
 #include <pthread.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <netdb.h>
-#include <poll.h>
-#include <semaphore.h>
-#include <error.h>
-
-
-
 
 /* fin des includes */
 

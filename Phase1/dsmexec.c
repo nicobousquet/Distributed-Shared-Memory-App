@@ -215,10 +215,8 @@ int main(int argc, char *argv[]) {
             /* creation du tube pour rediriger stderr */
             int fd_err[2];
             pipe(fd_err);
-
             pid = fork();
             if (pid == -1) ERROR_EXIT("fork")
-
             if (pid == 0) { /* fils */
                 /* redirection stdout */
                 close(STDOUT_FILENO);

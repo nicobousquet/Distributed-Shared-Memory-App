@@ -91,8 +91,8 @@ static void dsm_free_page(int numpage) {
 static int dsm_send(int dest, void *buf, size_t size, int flag) {
     int num_send = 0;
     if ((num_send = send(dest, buf, size, flag)) <= 0) {
-        fflush(stderr);
         perror("dsm_send()");
+        fflush(stderr);
     }
     return num_send;
 }
@@ -100,8 +100,8 @@ static int dsm_send(int dest, void *buf, size_t size, int flag) {
 static int dsm_recv(int from, void *buf, size_t size, int flag) {
     int num_rec = 0;
     if ((num_rec = recv(from, buf, size, flag)) < 0) {
-        fflush(stderr);
         perror("dsm_recv");
+        fflush(stderr);
     }
     return num_rec;
 }
@@ -110,6 +110,8 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
     printf("Waiting for reqs...\n");
     while (1) {
         //on écoute tous les processus distants
+        fflush(stdout);
+        fflush(stderr);
         if (poll(POLLFDS, DSM_NODE_NUM, -1) < 0) {
             perror("poll()");
             exit(EXIT_FAILURE);
@@ -393,6 +395,8 @@ void dsm_finalize(void) {
         toto++;
     }
     //on détruit le thread d'écoute
+    fflush(stderr);
+    fflush(stdout);
     pthread_cancel(comm_daemon);
     void *retval;
     pthread_join(comm_daemon, &retval);

@@ -289,10 +289,6 @@ int main(int argc, char *argv[]) {
             proc_array[i].connect_info.port_num = dist_listening_port;
             //on affecte un rang à chaque processus distant
             proc_array[i].connect_info.rank = i;
-            printf("########################################################################\n");
-            printf("connexions dsmexec avec le processus distant %i (%s:%i) ==> OK\n", i,
-                   proc_array[i].connect_info.machine, proc_array[i].connect_info.port_num);
-            printf("########################################################################\n");
         }
 
         /***********************************************************/

@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
     char *connecting_port = argv[2];
     struct socket client_socket;
     client_socket = socket_connect(hostname, client_socket, connecting_port);
+    printf("*** connexion processus distant (%s:%i) avec dsmexec (%s:%s) ==> OK ***\n", client_socket.ip_addr,
+           client_socket.port, hostname, connecting_port);
     //on définit la variable d'environnement DSMEXEC_FD
     char DSMEXEC_FD[MAX_STR];
     sprintf(DSMEXEC_FD, "DSMEXEC_FD=%i", client_socket.fd);
@@ -37,6 +39,7 @@ int main(int argc, char **argv) {
     /* connexions avec les autres processus dsm */
     struct socket server_socket;
     server_socket = create_server_socket(server_socket); //connfd;
+    printf("*** Processus distant écoute sur %s:%i ***\n", server_socket.ip_addr, server_socket.port);
     //on définit la variable d'environnement MASTER_FD
     char MASTER_FD[MAX_STR];
     sprintf(MASTER_FD, "MASTER_FD=%i", server_socket.fd);
@@ -44,6 +47,7 @@ int main(int argc, char **argv) {
     /* pour qu'il le propage à tous les autres */
     /* processus dsm */
     dsm_send(client_socket.fd, &server_socket.port, sizeof(server_socket.port), 0);
+    fflush(stdout);
     /* on execute la bonne commande */
     /* attention au chemin à utiliser ! */
     char *args[argc - 2];

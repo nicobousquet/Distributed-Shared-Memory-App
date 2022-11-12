@@ -10,6 +10,8 @@
 #include <netdb.h>
 #include <poll.h>
 #include <semaphore.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int DSM_NODE_NUM; /* nombre de processus dsm */
 int DSM_NODE_ID;  /* rang (= numero) du processus */
@@ -125,7 +127,8 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                 }
                 //si le processus reçoit une demande de page
                 if (req.type == DSM_REQ) {
-                    if (table_page[req.page_num].owner == DSM_NODE_ID) { //si le processus est bien propriétaire de la page
+                    if (table_page[req.page_num].owner ==
+                        DSM_NODE_ID) { //si le processus est bien propriétaire de la page
                         msg.source = DSM_NODE_ID;
                         msg.type = DSM_PAGE;
                         msg.page_num = req.page_num;
@@ -174,8 +177,10 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                 } else if (req.type == DSM_NREQ) { //le processus reçoit des changements d'infos de page
                     //le processus met à jour les informations de la table des pages
                     dsm_change_info(req.page_num, WRITE, req.source);
-                    printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source, req.page_num);
-                } else if (req.type == DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
+                    printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source,
+                           req.page_num);
+                } else if (req.type ==
+                           DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
                     PROCS_FINALIZED++;
                 } else if (req.type == NEW_OWNER) { //le processus reçoit le bon propriétaire de la page
                     msg.type = DSM_REQ;
@@ -259,7 +264,13 @@ struct socket socket_connect(struct socket client_socket, char *port, char *mach
             if (client_socket.fd == -1) {
                 continue;
             }
-            if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) != -1) { //on se connecte aux autres processus distants
+            if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) !=
+                -1) { //on se connecte aux autres processus distants
+                struct sockaddr_in *sockAddrInPtr = (struct sockaddr_in *) rp->ai_addr;
+                socklen_t len = sizeof(struct sockaddr_in);
+                getsockname(client_socket.fd, (struct sockaddr *) sockAddrInPtr, &len);
+                client_socket.port = ntohs(sockAddrInPtr->sin_port);
+                strcpy(client_socket.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
                 connected = 1;
                 break;
             }
@@ -322,7 +333,9 @@ char *dsm_init(int argc, char *argv[]) {
             struct socket client_socket;
             client_socket = socket_connect(client_socket, port, PROC_ARRAY[i].machine);
             PROC_ARRAY[i].fd = client_socket.fd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
-            printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n", DSM_NODE_ID, PROC_ARRAY[DSM_NODE_ID].machine, PROC_ARRAY[DSM_NODE_ID].port_num, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine, PROC_ARRAY[i].port_num);
+            printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n",
+                   DSM_NODE_ID, client_socket.ip_addr, client_socket.port, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine,
+                   PROC_ARRAY[i].port_num);
         }
     }
     //création socket d'écoute

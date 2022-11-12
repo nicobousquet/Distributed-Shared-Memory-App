@@ -81,7 +81,9 @@ struct socket socket_connect(char *hostname, struct socket client_socket, char *
         }
         if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) != -1) {
             struct sockaddr_in *sockAddrInPtr = (struct sockaddr_in *) rp->ai_addr;
-            client_socket.port = sockAddrInPtr->sin_port;
+            socklen_t len = sizeof(struct sockaddr_in);
+            getsockname(client_socket.fd, (struct sockaddr *) sockAddrInPtr, &len);
+            client_socket.port = ntohs(sockAddrInPtr->sin_port);
             strcpy(client_socket.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
             break;
         }

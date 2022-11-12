@@ -31,6 +31,12 @@ typedef struct {
     dsm_page_owner_t owner;
 } dsm_page_info_t;
 
+struct socket {
+    int fd;
+    char ip_addr[16];
+    int port;
+};
+
 extern dsm_page_info_t table_page[PAGE_NUMBER];
 
 typedef struct dsm_proc_conn dsm_proc_conn_t;

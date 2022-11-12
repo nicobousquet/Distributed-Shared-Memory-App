@@ -243,7 +243,7 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
     return;
 }
 
-int socket_connect(int sfd, char *port, char *machine) {
+struct socket socket_connect(struct socket client_socket, char *port, char *machine) {
     struct addrinfo hints, *result, *rp;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -255,19 +255,19 @@ int socket_connect(int sfd, char *port, char *machine) {
     int connected = 0;
     while (connected == 0) {
         for (rp = result; rp != NULL; rp = rp->ai_next) {
-            sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-            if (sfd == -1) {
+            client_socket.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+            if (client_socket.fd == -1) {
                 continue;
             }
-            if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) { //on se connecte aux autres processus distants
+            if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) != -1) { //on se connecte aux autres processus distants
                 connected = 1;
                 break;
             }
-            close(sfd);
+            close(client_socket.fd);
         }
     }
     freeaddrinfo(result);
-    return sfd;
+    return client_socket;
 }
 
 /* Seules ces deux dernieres fonctions sont visibles et utilisables */
@@ -312,7 +312,6 @@ char *dsm_init(int argc, char *argv[]) {
     }
     /* initialisation des connexions              */
     /* avec les autres processus : connect/accept */
-    int count = 1;
     int sfd = 0;
     char port[MAX_STR];
     memset(port, 0, MAX_STR);
@@ -320,10 +319,10 @@ char *dsm_init(int argc, char *argv[]) {
         PROC_ARRAY[i].fd = -1;
         if (PROC_ARRAY[i].rank != DSM_NODE_ID) {
             sprintf(port, "%i", PROC_ARRAY[i].port_num);
-            sfd = socket_connect(sfd, port, PROC_ARRAY[i].machine);
-            PROC_ARRAY[i].fd = sfd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
-            printf("Connexion du processus distant numéro %i avec les autres processus distants: %i/%i\n", DSM_NODE_ID, count, DSM_NODE_NUM - 1);
-            count++;
+            struct socket client_socket;
+            client_socket = socket_connect(client_socket, port, PROC_ARRAY[i].machine);
+            PROC_ARRAY[i].fd = client_socket.fd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
+            printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n", DSM_NODE_ID, PROC_ARRAY[DSM_NODE_ID].machine, PROC_ARRAY[DSM_NODE_ID].port_num, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine, PROC_ARRAY[i].port_num);
         }
     }
     //création socket d'écoute

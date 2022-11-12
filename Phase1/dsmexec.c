@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <poll.h>
@@ -106,13 +105,15 @@ void listen_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream)
                         for (int j = 0; j < num_procs; j++) {
                             if (stream == stdout) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_out) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
+                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank,
+                                           proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
                                            proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             } else if (stream == stderr) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_err) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
+                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank,
+                                           proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
                                            proc_array[j].pid);
                                     printf("%s", buff);
                                 }
@@ -176,23 +177,16 @@ int main(int argc, char *argv[]) {
 
         /* creation de la socket d'ecoute */
 
-        int sfd, connfd;
-        sfd = create_server_socket();
+        int connfd;
+        struct socket server_socket;
+        server_socket = create_server_socket(server_socket);
 
-        if ((listen(sfd, SOMAXCONN)) != 0) {
+        if ((listen(server_socket.fd, SOMAXCONN)) != 0) {
             perror("listen()\n");
             exit(EXIT_FAILURE);
         }
+        printf("Dsmexec écoute sur le port %i and l'adresse %s\n", server_socket.port, server_socket.ip_addr);
 
-        struct sockaddr_in my_addr;
-        socklen_t len = sizeof(my_addr);
-        getsockname(sfd, (struct sockaddr *) &my_addr, &len);
-        char ip_str[16];
-        inet_ntop(AF_INET, &my_addr.sin_addr, ip_str, sizeof(ip_str));
-        //on récupère le port d'écoute effectif
-        unsigned int port_number = ntohs(my_addr.sin_port);
-        char port[MAX_STR];
-        sprintf(port, "%u", port_number);
         //le processus récupère le nom de sa machine
         char hostname[MAX_STR];
         gethostname(hostname, MAX_STR);
@@ -241,6 +235,8 @@ int main(int argc, char *argv[]) {
                 strncpy(dsmwrap, argv[0], strlen(argv[0]) - strlen("dsmexec"));
                 strcat(dsmwrap, "dsmwrap");
                 /* Creation du tableau d'arguments pour le ssh */
+                char port[MAX_STR];
+                sprintf(port, "%u", server_socket.port);
                 char *args[5] = {"ssh", proc_array[i].connect_info.machine, dsmwrap, hostname, port};
                 char **newargv = malloc((argc + 4) * sizeof(char *));
                 newargv = fill_new_argv(newargv, args, argc, argv);
@@ -271,25 +267,17 @@ int main(int argc, char *argv[]) {
 
             /* on accepte les connexions des processus dsm */
             struct sockaddr_in server_addr;
-            if ((connfd = accept(sfd, (struct sockaddr *) &server_addr, &len)) < 0) {
+            socklen_t len = sizeof(server_addr);
+            if ((connfd = accept(server_socket.fd, (struct sockaddr *) &server_addr, &len)) < 0) {
                 perror("accept()\n");
                 exit(EXIT_FAILURE);
             }
-            printf("########################################################\n");
-            printf("connexions dsmexec avec les processus distants: %i/%i\n", i + 1, num_procs);
-            printf("########################################################\n");
             /*On recupere le fd*/
             proc_array[i].connect_info.fd = connfd;
 
             /*  On recupere le nom de la machine distante */
-            /* 1- d'abord la taille de la chaine */
-            int size;
-            dsm_recv(connfd, &size, sizeof(int), MSG_WAITALL);
-            /* 2- puis la chaine elle-meme */
-            char name[size * sizeof(char)];
-            dsm_recv(connfd, name, size, MSG_WAITALL);
-            memset(proc_array[i].connect_info.machine, 0, MAX_STR);
-            strncpy(proc_array[i].connect_info.machine, name, size);
+            dsm_recv(connfd, proc_array[i].connect_info.machine, sizeof(proc_array[i].connect_info.machine),
+                     MSG_WAITALL);
             /* On recupere le pid du processus distant  (optionnel)*/
             pid_t dist_pid;
             dsm_recv(connfd, &dist_pid, sizeof(pid_t), MSG_WAITALL);
@@ -297,11 +285,14 @@ int main(int argc, char *argv[]) {
             /* On recupere le numero de port de la socket */
             /* d'ecoute des processus distants */
             unsigned int dist_listening_port;
-            dsm_recv(connfd, &dist_listening_port, sizeof(unsigned int), MSG_WAITALL);
+            dsm_recv(connfd, &dist_listening_port, sizeof(int), MSG_WAITALL);
             proc_array[i].connect_info.port_num = dist_listening_port;
-
             //on affecte un rang à chaque processus distant
             proc_array[i].connect_info.rank = i;
+            printf("########################################################\n");
+            printf("connexions dsmexec avec le processus distant %i (%s) ==> OK\n", i,
+                   proc_array[i].connect_info.machine);
+            printf("########################################################\n");
         }
 
         /***********************************************************/
@@ -329,7 +320,8 @@ int main(int argc, char *argv[]) {
             /* distant recevra ses propres infos de connexion */
             /* (qu'il n'utilisera pas, nous sommes bien d'accords). */
             for (int j = 0; j < num_procs; j++) {
-                dsm_send(proc_array[i].connect_info.fd, &(proc_array[j].connect_info), sizeof(dsm_proc_conn_t), MSG_NOSIGNAL);
+                dsm_send(proc_array[i].connect_info.fd, &(proc_array[j].connect_info), sizeof(dsm_proc_conn_t),
+                         MSG_NOSIGNAL);
             }
         }
 
@@ -367,7 +359,7 @@ int main(int argc, char *argv[]) {
         }
         free(proc_array);
         /* on ferme la socket d'ecoute */
-        close(sfd);
+        close(server_socket.fd);
     }
     exit(EXIT_SUCCESS);
 }

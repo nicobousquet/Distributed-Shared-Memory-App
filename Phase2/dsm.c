@@ -373,7 +373,7 @@ char *dsm_init(int argc, char *argv[]) {
     /* creation du thread de communication           */
     /* ce thread va attendre et traiter les requetes */
     /* des autres processus                          */
-    pthread_create(&comm_daemon, NULL, dsm_comm_daemon, NULL);
+    pthread_create(&comm_daemon, NULL, &dsm_comm_daemon, NULL);
 
     /* Adresse de début de la zone de mémoire partagée */
     return ((char *) BASE_ADDR);

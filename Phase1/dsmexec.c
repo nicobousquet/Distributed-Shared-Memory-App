@@ -41,8 +41,9 @@ int read_machine_file(char *filename) {
     int last;
     int nLignes = 0;
     while ((c = fgetc(file)) != EOF) {
-        if (c == '\n' && last != '\n')
+        if (c == '\n' && last != '\n') {
             nLignes++;
+        }
         last = c;
     }
     /* Ici, last est égal au caractère juste avant le EOF. */
@@ -55,8 +56,9 @@ int read_machine_file(char *filename) {
     memset(proc_array, 0, num_procs * sizeof(dsm_proc_t));
     fclose(file);
     file = fopen(filename, "r");
-    if (file == NULL)
+    if (file == NULL) {
         exit(EXIT_FAILURE);
+    }
 
     char *line = NULL;
     size_t len = 0;
@@ -214,7 +216,9 @@ int main(int argc, char *argv[]) {
             int fd_err[2];
             pipe(fd_err);
             pid = fork();
-            if (pid == -1) ERROR_EXIT("fork")
+            if (pid == -1) {
+                ERROR_EXIT("fork")
+            }
             if (pid == 0) { /* fils */
                 /* redirection stdout */
                 close(STDOUT_FILENO);

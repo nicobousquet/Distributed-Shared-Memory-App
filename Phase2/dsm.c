@@ -29,7 +29,9 @@ static char *num2address(int numpage) {
     if (pointer >= (char *) TOP_ADDR) {
         fprintf(stderr, "[%i] Invalid address !\n", DSM_NODE_ID);
         return NULL;
-    } else return pointer;
+    } else {
+        return pointer;
+    }
 }
 
 /* cette fonction permet de recuperer un numero de page */

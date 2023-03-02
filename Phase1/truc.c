@@ -23,12 +23,15 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, "Working dir is %s\n", str);
 
     fprintf(stdout, "Number of args : %i\n", argc);
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
         fprintf(stderr, "arg[%i] : %s\n", i, argv[i]);
+    }
 
     sprintf(exec_path, "%s/%s", str, "file.txt");
     fd = open(exec_path, O_RDONLY);
-    if (fd == -1) perror("open");
+    if (fd == -1) {
+        perror("open");
+    }
     fprintf(stdout, "================ Valeur du descripteur : %i\n", fd);
 
     fflush(stdout);

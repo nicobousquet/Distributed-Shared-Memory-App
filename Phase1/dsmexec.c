@@ -28,7 +28,11 @@ void usage(void) {
 void sigchld_handler(int sig) {
     /* on traite les fils qui se terminent */
     /* pour eviter les zombies */
-    wait(NULL);
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        printf("Processus fils %d terminé\n", pid);
+    }
 }
 
 int read_machine_file(char *filename) {
@@ -169,7 +173,7 @@ int main(int argc, char *argv[]) {
         struct sigaction child;
         memset(&child, 0, sizeof(struct sigaction));
         child.sa_handler = sigchld_handler;
-        child.sa_flags = SA_RESTART;
+        child.sa_flags = SA_RESTART | SA_NOCLDSTOP;
         sigaction(SIGCHLD, &child, NULL);
         /* lecture du fichier de machines */
         /* 1- on recupere le nombre de processus a lancer */
@@ -343,10 +347,7 @@ int main(int argc, char *argv[]) {
         }
         listen_and_close_pipes(pollfds_out, num_procs, stdout);
         listen_and_close_pipes(pollfds_err, num_procs, stderr);
-        /* on attend les processus fils */
-        for (int i = 0; i < num_procs; i++) {
-            wait(NULL);
-        }
+
         /* on ferme les descripteurs proprement */
         for (int i = 0; i < num_procs; i++) {
             if (proc_array[i].connect_info.fd != -1) {

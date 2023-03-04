@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
             perror("listen()\n");
             exit(EXIT_FAILURE);
         }
-        printf("Dsmexec écoute sur le port %i and l'adresse %s\n", server_socket.port, server_socket.ip_addr);
+        printf("Dsmexec écoute sur %s:%i\n", server_socket.ip_addr, server_socket.port);
 
         //le processus récupère le nom de sa machine
         char hostname[MAX_STR];

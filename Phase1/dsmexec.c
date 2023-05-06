@@ -111,16 +111,12 @@ void listen_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream)
                         for (int j = 0; j < num_procs; j++) {
                             if (stream == stdout) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_out) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank,
-                                           proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
-                                           proc_array[j].pid);
+                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             } else if (stream == stderr) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_err) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank,
-                                           proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine,
-                                           proc_array[j].pid);
+                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             }

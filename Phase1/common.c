@@ -28,7 +28,8 @@ int dsm_recv(int from, void *buf, size_t size, int flag) {
     return num_rec;
 }
 
-struct socket create_server_socket(struct socket server_socket) {
+struct server server_init() {
+    struct server server;
     struct addrinfo hints, *result, *rp;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -41,14 +42,14 @@ struct socket create_server_socket(struct socket server_socket) {
         exit(EXIT_FAILURE);
     }
     for (rp = result; rp != NULL; rp = rp->ai_next) {
-        server_socket.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (server_socket.fd == -1) {
+        server.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (server.fd == -1) {
             continue;
         }
-        if (bind(server_socket.fd, rp->ai_addr, rp->ai_addrlen) == 0) {
+        if (bind(server.fd, rp->ai_addr, rp->ai_addrlen) == 0) {
             break;
         }
-        close(server_socket.fd);
+        close(server.fd);
     }
     if (rp == NULL) {
         fprintf(stderr, "Could not bind\n");
@@ -57,15 +58,16 @@ struct socket create_server_socket(struct socket server_socket) {
 
     struct sockaddr_in my_addr;
     socklen_t len = sizeof(my_addr);
-    getsockname(server_socket.fd, (struct sockaddr *) &my_addr, &len);
-    inet_ntop(AF_INET, &my_addr.sin_addr, server_socket.ip_addr, sizeof(server_socket.ip_addr));
+    getsockname(server.fd, (struct sockaddr *) &my_addr, &len);
+    inet_ntop(AF_INET, &my_addr.sin_addr, server.ip_addr, sizeof(server.ip_addr));
     //on récupère le port d'écoute effectif
-    server_socket.port = ntohs(my_addr.sin_port);
+    server.port = ntohs(my_addr.sin_port);
     freeaddrinfo(result);
-    return server_socket;
+    return server;
 }
 
-struct socket socket_connect(char *hostname, struct socket client_socket, char *connecting_port) {
+struct client client_init(char *hostname, char *connecting_port) {
+    struct client dsmwrap_client;
     struct addrinfo hints, *result, *rp;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -75,25 +77,25 @@ struct socket socket_connect(char *hostname, struct socket client_socket, char *
         exit(EXIT_FAILURE);
     }
     for (rp = result; rp != NULL; rp = rp->ai_next) {
-        client_socket.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (client_socket.fd == -1) {
+        dsmwrap_client.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (dsmwrap_client.fd == -1) {
             continue;
         }
-        if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) != -1) {
+        if (connect(dsmwrap_client.fd, rp->ai_addr, rp->ai_addrlen) != -1) {
             struct sockaddr_in *sockAddrInPtr = (struct sockaddr_in *) rp->ai_addr;
             socklen_t len = sizeof(struct sockaddr_in);
-            getsockname(client_socket.fd, (struct sockaddr *) sockAddrInPtr, &len);
-            client_socket.port = ntohs(sockAddrInPtr->sin_port);
-            strcpy(client_socket.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
+            getsockname(dsmwrap_client.fd, (struct sockaddr *) sockAddrInPtr, &len);
+            dsmwrap_client.port = ntohs(sockAddrInPtr->sin_port);
+            strcpy(dsmwrap_client.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
             break;
         }
-        close(client_socket.fd);
+        close(dsmwrap_client.fd);
     }
     if (rp == NULL) {
         fprintf(stderr, "Could not connect\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(result);
-    return client_socket;
+    return dsmwrap_client;
 }
 

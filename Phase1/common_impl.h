@@ -23,7 +23,13 @@ struct dsm_proc_conn {
     int fd_for_exit; /* special */
 };
 
-struct socket {
+struct server {
+    int fd;
+    char ip_addr[16];
+    int port;
+};
+
+struct client {
     int fd;
     char ip_addr[16];
     int port;
@@ -35,9 +41,9 @@ int dsm_send(int dest, void *buf, size_t size, int flag);
 
 int dsm_recv(int from, void *buf, size_t size, int flag);
 
-struct socket create_server_socket(struct socket server_socket);
+struct server server_init();
 
-struct socket socket_connect(char *hostname, struct socket client_socket, char *connecting_port);
+struct client client_init(char *hostname, char *connecting_port);
 /**************************************************************/
 /******************* FIN DE PARTIE NON MODIFIABLE *************/
 /**************************************************************/

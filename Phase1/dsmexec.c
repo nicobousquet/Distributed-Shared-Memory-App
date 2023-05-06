@@ -184,14 +184,14 @@ int main(int argc, char *argv[]) {
         /* creation de la socket d'ecoute */
 
         int connfd;
-        struct socket server_socket;
-        server_socket = create_server_socket(server_socket);
 
-        if ((listen(server_socket.fd, SOMAXCONN)) != 0) {
+        struct server dsmexec_server = server_init();
+
+        if ((listen(dsmexec_server.fd, SOMAXCONN)) != 0) {
             perror("listen()\n");
             exit(EXIT_FAILURE);
         }
-        printf("Dsmexec écoute sur %s:%i\n", server_socket.ip_addr, server_socket.port);
+        printf("Dsmexec écoute sur %s:%i\n", dsmexec_server.ip_addr, dsmexec_server.port);
 
         //le processus récupère le nom de sa machine
         char hostname[MAX_STR];
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
                 strcat(dsmwrap, "dsmwrap");
                 /* Creation du tableau d'arguments pour le ssh */
                 char port[MAX_STR];
-                sprintf(port, "%u", server_socket.port);
+                sprintf(port, "%u", dsmexec_server.port);
                 char *args[5] = {"ssh", proc_array[i].connect_info.machine, dsmwrap, hostname, port};
                 char **newargv = malloc((argc + 4) * sizeof(char *));
                 newargv = fill_new_argv(newargv, args, argc, argv);
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
             /* on accepte les connexions des processus dsm */
             struct sockaddr_in server_addr;
             socklen_t len = sizeof(server_addr);
-            if ((connfd = accept(server_socket.fd, (struct sockaddr *) &server_addr, &len)) < 0) {
+            if ((connfd = accept(dsmexec_server.fd, (struct sockaddr *) &server_addr, &len)) < 0) {
                 perror("accept()\n");
                 exit(EXIT_FAILURE);
             }
@@ -324,8 +324,7 @@ int main(int argc, char *argv[]) {
             /* distant recevra ses propres infos de connexion */
             /* (qu'il n'utilisera pas, nous sommes bien d'accords). */
             for (int j = 0; j < num_procs; j++) {
-                dsm_send(proc_array[i].connect_info.fd, &(proc_array[j].connect_info), sizeof(dsm_proc_conn_t),
-                         MSG_NOSIGNAL);
+                dsm_send(proc_array[i].connect_info.fd, &(proc_array[j].connect_info), sizeof(dsm_proc_conn_t), MSG_NOSIGNAL);
             }
         }
 
@@ -360,7 +359,7 @@ int main(int argc, char *argv[]) {
         }
         free(proc_array);
         /* on ferme la socket d'ecoute */
-        close(server_socket.fd);
+        close(dsmexec_server.fd);
     }
     exit(EXIT_SUCCESS);
 }

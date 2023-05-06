@@ -252,7 +252,8 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
     return;
 }
 
-struct socket socket_connect(struct socket client_socket, char *port, char *machine) {
+struct client client_init(char *port, char *machine) {
+    struct client client;
     struct addrinfo hints, *result, *rp;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -264,25 +265,25 @@ struct socket socket_connect(struct socket client_socket, char *port, char *mach
     int connected = 0;
     while (connected == 0) {
         for (rp = result; rp != NULL; rp = rp->ai_next) {
-            client_socket.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-            if (client_socket.fd == -1) {
+            client.fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+            if (client.fd == -1) {
                 continue;
             }
-            if (connect(client_socket.fd, rp->ai_addr, rp->ai_addrlen) !=
+            if (connect(client.fd, rp->ai_addr, rp->ai_addrlen) !=
                 -1) { //on se connecte aux autres processus distants
                 struct sockaddr_in *sockAddrInPtr = (struct sockaddr_in *) rp->ai_addr;
                 socklen_t len = sizeof(struct sockaddr_in);
-                getsockname(client_socket.fd, (struct sockaddr *) sockAddrInPtr, &len);
-                client_socket.port = ntohs(sockAddrInPtr->sin_port);
-                strcpy(client_socket.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
+                getsockname(client.fd, (struct sockaddr *) sockAddrInPtr, &len);
+                client.port = ntohs(sockAddrInPtr->sin_port);
+                strcpy(client.ip_addr, inet_ntoa(sockAddrInPtr->sin_addr));
                 connected = 1;
                 break;
             }
-            close(client_socket.fd);
+            close(client.fd);
         }
     }
     freeaddrinfo(result);
-    return client_socket;
+    return client;
 }
 
 /* Seules ces deux dernieres fonctions sont visibles et utilisables */
@@ -334,11 +335,10 @@ char *dsm_init(int argc, char *argv[]) {
         PROC_ARRAY[i].fd = -1;
         if (PROC_ARRAY[i].rank != DSM_NODE_ID) {
             sprintf(port, "%i", PROC_ARRAY[i].port_num);
-            struct socket client_socket;
-            client_socket = socket_connect(client_socket, port, PROC_ARRAY[i].machine);
-            PROC_ARRAY[i].fd = client_socket.fd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
+            struct client exemple_client = client_init(port, PROC_ARRAY[i].machine);
+            PROC_ARRAY[i].fd = exemple_client.fd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
             printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n",
-                   DSM_NODE_ID, client_socket.ip_addr, client_socket.port, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine,
+                   DSM_NODE_ID, exemple_client.ip_addr, exemple_client.port, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine,
                    PROC_ARRAY[i].port_num);
         }
     }

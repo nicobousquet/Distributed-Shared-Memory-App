@@ -31,7 +31,7 @@ typedef struct {
     dsm_page_owner_t owner;
 } dsm_page_info_t;
 
-struct socket {
+struct client {
     int fd;
     char ip_addr[16];
     int port;

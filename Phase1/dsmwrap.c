@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     char *hostname = argv[1];
     char *connecting_port = argv[2];
     struct client dsmwrap_client = client_init(hostname, connecting_port);
-    printf("*** connexion processus distant (%s:%i) avec dsmexec (%s:%s) ==> OK ***\n", dsmwrap_client.ip_addr, dsmwrap_client.port, hostname, connecting_port);
+    printf("*** Connexion processus distant (%s:%i) avec dsmexec (%s:%s) ==> OK ***\n", dsmwrap_client.ip_addr, dsmwrap_client.port, hostname, connecting_port);
     //on définit la variable d'environnement DSMEXEC_FD
     char DSMEXEC_FD[MAX_STR];
     sprintf(DSMEXEC_FD, "DSMEXEC_FD=%i", dsmwrap_client.fd);
@@ -24,7 +24,6 @@ int main(int argc, char **argv) {
     /* Envoi du nom de machine au lanceur */
     char name[MAX_STR];
     gethostname(name, MAX_STR);
-    //envoi du nom de la machine
     dsm_send(dsmwrap_client.fd, dsmwrap_client.ip_addr, MAX_STR, 0);
 
     //on récupère le pid du processus

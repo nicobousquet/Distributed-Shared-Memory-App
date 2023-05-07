@@ -31,7 +31,7 @@ void sigchld_handler(int sig) {
     pid_t pid;
     int status;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        printf("Processus fils %d terminé\n", pid);
+        printf("[DSMEXEC] Processus fils %d terminé\n", pid);
     }
 }
 
@@ -85,7 +85,7 @@ int read_machine_file(char *filename) {
     return num_procs;
 }
 
-void listen_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream) {
+void read_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream) {
     char buff[MAX_STR];
     memset(buff, 0, MAX_STR);
     int inactive_pipes = 0; //tubes fermés
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
             perror("listen()\n");
             exit(EXIT_FAILURE);
         }
-        printf("Dsmexec écoute sur %s:%i\n", dsmexec_server.ip_addr, dsmexec_server.port);
+        printf("[DSMEXEC] Ecoute sur %s:%i\n", dsmexec_server.ip_addr, dsmexec_server.port);
 
         //le processus récupère le nom de sa machine
         char hostname[MAX_STR];
@@ -216,6 +216,7 @@ int main(int argc, char *argv[]) {
                 ERROR_EXIT("fork")
             }
             if (pid == 0) { /* fils */
+                printf("[DSMEXEC] Processus fils %i créé\n", getpid());
                 /* redirection stdout */
                 close(STDOUT_FILENO);
                 for (int j = 0; j < i; j++) {
@@ -344,8 +345,8 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        listen_and_close_pipes(pollfds_out, num_procs, stdout);
-        listen_and_close_pipes(pollfds_err, num_procs, stderr);
+        read_and_close_pipes(pollfds_out, num_procs, stdout);
+        read_and_close_pipes(pollfds_err, num_procs, stderr);
 
         /* on ferme les descripteurs proprement */
         for (int i = 0; i < num_procs; i++) {

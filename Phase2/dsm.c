@@ -17,10 +17,11 @@ int DSM_NODE_NUM; /* nombre de processus dsm */
 int DSM_NODE_ID;  /* rang (= numero) du processus */
 dsm_proc_conn_t *PROC_ARRAY = NULL; //tableau des processus distants
 struct pollfd *POLLFDS = NULL; //tableau des fds des processus distants pour la socket d'écoute
-int PROCS_FINALIZED = 1; //variable globale du nombre de processus arrivés à la fin de exemple.c afin de les synchroniser
+int PROCS_COMPLETED = 0; //variable globale du nombre de processus arrivés à la fin de exemple.c afin de les synchroniser
 dsm_page_info_t table_page[PAGE_NUMBER];
 pthread_t comm_daemon;
 sem_t semaphore;
+sem_t semaphore_threads_completion;
 
 /* indique l'adresse de debut de la page de numero numpage */
 static char *num2address(int numpage) {
@@ -183,7 +184,10 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                     dsm_change_info(req.page_num, WRITE, req.source);
                     printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source, req.page_num);
                 } else if (req.type == DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
-                    PROCS_FINALIZED++;
+                    PROCS_COMPLETED++;
+                    if (PROCS_COMPLETED == DSM_NODE_NUM) {
+                        sem_post(&semaphore_threads_completion);
+                    }
                 } else if (req.type == NEW_OWNER) { //le processus reçoit le bon propriétaire de la page
                     msg.type = DSM_REQ;
                     msg.source = DSM_NODE_ID;
@@ -294,6 +298,11 @@ char *dsm_init(int argc, char *argv[]) {
         perror("sem_init");
     }
 
+    int err1 = sem_init(&semaphore_threads_completion, 0, 0);
+    if (err1 != 0) {
+        perror("sem_init");
+    }
+
     /* Récupération de la valeur des variables d'environnement */
     /* DSMEXEC_FD et MASTER_FD                                 */
     char *MASTER_FD_ptr = getenv("MASTER_FD");
@@ -387,11 +396,14 @@ void dsm_finalize(void) {
             dsm_send(PROC_ARRAY[i].fd, &req, sizeof(dsm_req_t), 0);
         }
     }
-    //le processus attend que tous les autres processus en soit au même stade que lui pour tuer le thread d'écoute
-    int toto = 0;
-    while (PROCS_FINALIZED != DSM_NODE_NUM) {
-        toto++;
+
+    PROCS_COMPLETED++;
+    if (PROCS_COMPLETED == DSM_NODE_NUM) {
+        sem_post(&semaphore_threads_completion);
     }
+
+    //le processus attend que tous les autres processus en soit au même stade que lui pour tuer le thread d'écoute
+    sem_wait(&semaphore_threads_completion);
     //on détruit le thread d'écoute
     fflush(stderr);
     fflush(stdout);

@@ -37,16 +37,10 @@ struct client {
     int port;
 };
 
-extern dsm_page_info_t table_page[PAGE_NUMBER];
-
 typedef struct dsm_proc_conn dsm_proc_conn_t;
 
-extern pthread_t comm_daemon;
 extern int DSM_NODE_ID;
 extern int DSM_NODE_NUM;
-extern dsm_proc_conn_t *PROC_ARRAY;
-extern int PROCS_FINALIZED;
-
 
 char *dsm_init(int argc, char *argv[]);
 

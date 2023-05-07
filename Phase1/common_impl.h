@@ -15,13 +15,12 @@ typedef char maxstr_t[MAX_STR];
 
 /* definition du type des infos */
 /* de connexion des processus dsm */
-struct dsm_proc_conn {
+typedef struct dsm_proc_conn {
     int rank;
     maxstr_t machine;
     int port_num;
     int fd;
-    int fd_for_exit; /* special */
-};
+} dsm_proc_conn_t;
 
 struct server {
     int fd;
@@ -34,8 +33,6 @@ struct client {
     char ip_addr[16];
     int port;
 };
-
-typedef struct dsm_proc_conn dsm_proc_conn_t;
 
 int dsm_send(int dest, void *buf, size_t size, int flag);
 
@@ -50,10 +47,9 @@ struct client client_init(char *hostname, char *connecting_port);
 
 /* definition du type des infos */
 /* d'identification des processus dsm */
-struct dsm_proc {
+typedef struct dsm_proc {
     pid_t pid;
-    int pipe_fd_out; //file descriptor du tube associé à SDTOUT
-    int pipe_fd_err; //descriptor du tube associé à SDTERR
+    int pipe_fd_stdout; //file descriptor du tube associé à SDTOUT
+    int pipe_fd_stderr; //descriptor du tube associé à SDTERR
     dsm_proc_conn_t connect_info;
-};
-typedef struct dsm_proc dsm_proc_t;
+} dsm_proc_t;

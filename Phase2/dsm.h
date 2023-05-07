@@ -51,7 +51,6 @@ struct dsm_proc_conn {
     maxstr_t machine;
     int port_num;
     int fd;
-    int fd_for_exit; /* special */
 };
 
 typedef enum {

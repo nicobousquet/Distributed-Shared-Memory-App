@@ -73,8 +73,8 @@ int read_machine_file(char *filename) {
                 strcpy(proc_array[i].connect_info.machine, line);
             }
             //on initialise les valeurs des fd à -1
-            proc_array[i].pipe_fd_err = -1;
-            proc_array[i].pipe_fd_out = -1;
+            proc_array[i].pipe_fd_stderr = -1;
+            proc_array[i].pipe_fd_stdout = -1;
             i++;
         }
     }
@@ -110,12 +110,12 @@ void read_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream) {
                     if (buff[offset - 1] == '\n') {
                         for (int j = 0; j < num_procs; j++) {
                             if (stream == stdout) {
-                                if (pollfds[i].fd == proc_array[j].pipe_fd_out) {
+                                if (pollfds[i].fd == proc_array[j].pipe_fd_stdout) {
                                     printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             } else if (stream == stderr) {
-                                if (pollfds[i].fd == proc_array[j].pipe_fd_err) {
+                                if (pollfds[i].fd == proc_array[j].pipe_fd_stderr) {
                                     printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
@@ -281,8 +281,7 @@ int main(int argc, char *argv[]) {
             proc_array[i].connect_info.fd = connfd;
 
             /*  On recupere le nom de la machine distante */
-            dsm_recv(connfd, proc_array[i].connect_info.machine, sizeof(proc_array[i].connect_info.machine),
-                     MSG_WAITALL);
+            dsm_recv(connfd, proc_array[i].connect_info.machine, sizeof(proc_array[i].connect_info.machine), MSG_WAITALL);
             /* On recupere le pid du processus distant  (optionnel)*/
             pid_t dist_pid;
             dsm_recv(connfd, &dist_pid, sizeof(pid_t), MSG_WAITALL);
@@ -340,8 +339,8 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < num_procs; j++) {
                 //on lie chaque tube à chaque processus distant
                 if (proc_array[j].pid == pid_in_pipe) {
-                    proc_array[j].pipe_fd_out = pollfds_out[i].fd;
-                    proc_array[j].pipe_fd_err = pollfds_err[i].fd;
+                    proc_array[j].pipe_fd_stdout = pollfds_out[i].fd;
+                    proc_array[j].pipe_fd_stderr = pollfds_err[i].fd;
                 }
             }
         }

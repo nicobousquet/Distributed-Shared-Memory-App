@@ -1,14 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <semaphore.h>
-#include "common_impl.h"
-
-/* fin des includes */
-
 #define TOP_ADDR    (0x40000000)
 #define PAGE_NUMBER (100)
 #define PAGE_SIZE   (sysconf(_SC_PAGE_SIZE))

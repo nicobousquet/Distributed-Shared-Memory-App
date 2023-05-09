@@ -1,7 +1,4 @@
 #define _GNU_SOURCE
-#include <pthread.h>
-
-/* fin des includes */
 
 #define TOP_ADDR    (0x40000000)
 #define PAGE_NUMBER (100)
@@ -37,8 +34,6 @@ struct client {
     int port;
 };
 
-typedef struct dsm_proc_conn dsm_proc_conn_t;
-
 extern int DSM_NODE_ID;
 extern int DSM_NODE_NUM;
 
@@ -46,12 +41,13 @@ char *dsm_init(int argc, char *argv[]);
 
 void dsm_finalize(void);
 
-struct dsm_proc_conn {
+typedef struct dsm_proc_conn {
     int rank;
     maxstr_t machine;
     int port_num;
     int fd;
-};
+    int fd_for_exit; /* special */
+} dsm_proc_conn_t;
 
 typedef enum {
     DSM_NO_TYPE = -1,

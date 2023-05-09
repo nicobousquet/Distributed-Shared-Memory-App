@@ -1,8 +1,4 @@
 #include <sys/types.h>
-#include <sys/socket.h>
-
-
-/* autres includes (eventuellement) */
 
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}
 
@@ -20,6 +16,7 @@ typedef struct dsm_proc_conn {
     maxstr_t machine;
     int port_num;
     int fd;
+    int fd_for_exit; /* special */
 } dsm_proc_conn_t;
 
 struct server {

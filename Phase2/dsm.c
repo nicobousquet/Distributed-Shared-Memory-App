@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <netdb.h>
@@ -12,6 +11,7 @@
 #include <semaphore.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 int DSM_NODE_NUM; /* nombre de processus dsm */
 int DSM_NODE_ID;  /* rang (= numero) du processus */
@@ -182,8 +182,10 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                 } else if (req.type == DSM_NREQ) { //le processus reçoit des changements d'infos de page
                     //le processus met à jour les informations de la table des pages
                     dsm_change_info(req.page_num, WRITE, req.source);
-                    printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source, req.page_num);
-                } else if (req.type == DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
+                    printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source,
+                           req.page_num);
+                } else if (req.type ==
+                           DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
                     PROCS_COMPLETED++;
                     if (PROCS_COMPLETED == DSM_NODE_NUM) {
                         sem_post(&semaphore_threads_completion);
@@ -344,7 +346,9 @@ char *dsm_init(int argc, char *argv[]) {
             sprintf(port, "%i", PROC_ARRAY[i].port_num);
             struct client exemple_client = client_init(port, PROC_ARRAY[i].machine);
             PROC_ARRAY[i].fd = exemple_client.fd; //on remplit le fd dans le proc_array pour pouvoir communiquer avec les autres dsm_procs
-            printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n", DSM_NODE_ID, exemple_client.ip_addr, exemple_client.port, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine, PROC_ARRAY[i].port_num);
+            printf("Connexion du processus distant numéro %i (%s:%i) avec le processus distant numéro %i (%s:%i)\n",
+                   DSM_NODE_ID, exemple_client.ip_addr, exemple_client.port, PROC_ARRAY[i].rank, PROC_ARRAY[i].machine,
+                   PROC_ARRAY[i].port_num);
         }
     }
     //création socket d'écoute

@@ -406,7 +406,7 @@ void dsm_finalize(void) {
         sem_post(&semaphore_threads_completion);
     }
 
-    //le processus attend que tous les autres processus en soit au même stade que lui pour tuer le thread d'écoute
+    //le processus attend que tous les autres processus en soient au même stade que lui pour tuer le thread d'écoute
     sem_wait(&semaphore_threads_completion);
     //on détruit le thread d'écoute
     fflush(stderr);

@@ -66,13 +66,13 @@ struct server server_init() {
     return server;
 }
 
-struct client client_init(char *hostname, char *connecting_port) {
+struct client client_init(char *hostname, char *connection_port) {
     struct client dsmwrap_client;
     struct addrinfo hints, *result, *rp;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(hostname, connecting_port, &hints, &result) != 0) {
+    if (getaddrinfo(hostname, connection_port, &hints, &result) != 0) {
         perror("getaddrinfo()");
         exit(EXIT_FAILURE);
     }

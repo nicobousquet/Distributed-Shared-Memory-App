@@ -13,10 +13,10 @@ int main(int argc, char **argv) {
     /* creation d'une socket pour se connecter au */
     /* au lanceur et envoyer/recevoir les infos */
     /* necessaires pour la phase dsm_init */
-    char *hostname = argv[1];
-    char *connecting_port = argv[2];
-    struct client dsmwrap_client = client_init(hostname, connecting_port);
-    printf("*** Connexion processus distant (%s:%i) avec dsmexec (%s:%s) ==> OK ***\n", dsmwrap_client.ip_addr, dsmwrap_client.port, hostname, connecting_port);
+    char *dsmexec_hostname = argv[1];
+    char *dsmexec_port = argv[2];
+    struct client dsmwrap_client = client_init(dsmexec_hostname, dsmexec_port);
+    printf("*** Connexion processus distant (%s:%i) avec dsmexec (%s:%s) ==> OK ***\n", dsmwrap_client.ip_addr, dsmwrap_client.port, dsmexec_hostname, dsmexec_port);
     //on définit la variable d'environnement DSMEXEC_FD
     char DSMEXEC_FD[MAX_STR];
     sprintf(DSMEXEC_FD, "DSMEXEC_FD=%i", dsmwrap_client.fd);

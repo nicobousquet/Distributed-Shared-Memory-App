@@ -37,7 +37,7 @@ int dsm_recv(int from, void *buf, size_t size, int flag);
 
 struct server server_init();
 
-struct client client_init(char *hostname, char *connecting_port);
+struct client client_init(char *hostname, char *connection_port);
 /**************************************************************/
 /******************* FIN DE PARTIE NON MODIFIABLE *************/
 /**************************************************************/

@@ -67,9 +67,9 @@ int read_machine_file(char *filename) {
         if (num_read != 1) {
             //on récupère le nom des machines
             if (line[strlen(line) - 1] == '\n') {
-                strncpy(proc_array[i].connect_info.machine, line, strlen(line) - 1);
+                strncpy(proc_array[i].connect_info.ip_addr, line, strlen(line) - 1);
             } else {
-                strcpy(proc_array[i].connect_info.machine, line);
+                strcpy(proc_array[i].connect_info.ip_addr, line);
             }
             //on initialise les valeurs des fd à -1
             proc_array[i].pipe_fd_stderr = -1;
@@ -110,12 +110,12 @@ void read_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream) {
                         for (int j = 0; j < num_procs; j++) {
                             if (stream == stdout) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_stdout) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
+                                    printf("[Proc# %i][%i <= %s:%i <= stdout]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.ip_addr, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             } else if (stream == stderr) {
                                 if (pollfds[i].fd == proc_array[j].pipe_fd_stderr) {
-                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.machine, proc_array[j].pid);
+                                    printf("[Proc# %i][%i <= %s:%i <= stderr]: ", proc_array[j].connect_info.rank, proc_array[j].connect_info.port_num, proc_array[j].connect_info.ip_addr, proc_array[j].pid);
                                     printf("%s", buff);
                                 }
                             }
@@ -226,7 +226,6 @@ int main(int argc, char *argv[]) {
                 dup(fd_out[1]);
                 close(fd_out[1]);
                 /* redirection stderr */
-                close(STDERR_FILENO);
                 for (int j = 0; j < i; j++) {
                     close(pollfds_err[j].fd);
                     pollfds_err[j].fd = -1;
@@ -241,7 +240,7 @@ int main(int argc, char *argv[]) {
                 /* Creation du tableau d'arguments pour le ssh */
                 char port[MAX_STR];
                 sprintf(port, "%u", dsmexec_server.port);
-                char *args[5] = {"ssh", proc_array[i].connect_info.machine, dsmwrap, hostname, port};
+                char *args[5] = {"ssh", proc_array[i].connect_info.ip_addr, dsmwrap, dsmexec_server.ip_addr, port};
                 char **newargv = malloc((argc + 4) * sizeof(char *));
                 newargv = fill_new_argv(newargv, args, argc, argv);
                 /* jump to new prog : */
@@ -279,8 +278,8 @@ int main(int argc, char *argv[]) {
             /*On recupere le fd*/
             proc_array[i].connect_info.fd = connfd;
 
-            /*  On recupere le nom de la machine distante */
-            dsm_recv(connfd, proc_array[i].connect_info.machine, sizeof(proc_array[i].connect_info.machine), MSG_WAITALL);
+            /*  On recupere l'adresse ip de la machine distante */
+            dsm_recv(connfd, proc_array[i].connect_info.ip_addr, sizeof(proc_array[i].connect_info.ip_addr), MSG_WAITALL);
             /* On recupere le pid du processus distant  (optionnel)*/
             pid_t dist_pid;
             dsm_recv(connfd, &dist_pid, sizeof(pid_t), MSG_WAITALL);

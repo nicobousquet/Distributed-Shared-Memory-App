@@ -13,7 +13,7 @@ typedef char maxstr_t[MAX_STR];
 /* de connexion des processus dsm */
 typedef struct dsm_proc_conn {
     int rank;
-    maxstr_t machine;
+    maxstr_t ip_addr;
     int port_num;
     int fd;
     int fd_for_exit; /* special */

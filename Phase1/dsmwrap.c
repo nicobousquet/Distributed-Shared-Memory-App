@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     char DSMEXEC_FD[MAX_STR];
     sprintf(DSMEXEC_FD, "DSMEXEC_FD=%i", dsmwrap_client.fd);
 
-    /* Envoi du nom de machine au lanceur */
+    /* Envoi de l'adresse ip de la machine au lanceur */
     char name[MAX_STR];
     gethostname(name, MAX_STR);
     dsm_send(dsmwrap_client.fd, dsmwrap_client.ip_addr, MAX_STR, 0);

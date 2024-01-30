@@ -226,6 +226,7 @@ int main(int argc, char *argv[]) {
                 dup(fd_out[1]);
                 close(fd_out[1]);
                 /* redirection stderr */
+                close(STDERR_FILENO);
                 for (int j = 0; j < i; j++) {
                     close(pollfds_err[j].fd);
                     pollfds_err[j].fd = -1;

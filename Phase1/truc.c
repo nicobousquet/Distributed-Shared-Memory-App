@@ -11,11 +11,11 @@ int main(int argc, char *argv[]) {
     //char *wd_ptr = NULL;
 
     char *MASTER_FD_ptr = getenv("MASTER_FD");
-    int MASTER_FD = atoi(MASTER_FD_ptr);
+    int MASTER_FD = strtol(MASTER_FD_ptr, NULL, 10);
     printf("MASTER_FD = %i\n", MASTER_FD);
 
     char *DSMEXEC_FD_ptr = getenv("DSMEXEC_FD");
-    int DSMEXEC_FD = atoi(DSMEXEC_FD_ptr);
+    int DSMEXEC_FD = strtol(DSMEXEC_FD_ptr, NULL, 10);
     printf("DSMEXEC_FD = %i\n", DSMEXEC_FD);
 
 

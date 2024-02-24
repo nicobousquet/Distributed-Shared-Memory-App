@@ -24,7 +24,7 @@ sem_t semaphore;
 sem_t semaphore_threads_completion;
 
 /* indique l'adresse de debut de la page de numero numpage */
-static char *num2address(int numpage) {
+static char *num2address(long numpage) {
     char *pointer = (char *) (BASE_ADDR + (numpage * (PAGE_SIZE)));
 
     if (pointer >= (char *) TOP_ADDR) {
@@ -37,18 +37,18 @@ static char *num2address(int numpage) {
 
 /* cette fonction permet de recuperer un numero de page */
 /* a partir  d'une adresse  quelconque */
-static int address2num(char *addr) {
+static long address2num(const char *addr) {
     return (((intptr_t)(addr - BASE_ADDR)) / (PAGE_SIZE));
 }
 
 /* cette fonction permet de recuperer l'adresse d'une page */
 /* a partir d'une adresse quelconque (dans la page)        */
-static char *address2pgaddr(char *addr) {
+static char *address2pgaddr(const char *addr) {
     return (char *) (((intptr_t) addr) & ~(PAGE_SIZE - 1));
 }
 
 /* fonctions pouvant etre utiles */
-static void dsm_change_info(int numpage, dsm_page_state_t state, dsm_page_owner_t owner) {
+static void dsm_change_info(long numpage, dsm_page_state_t state, dsm_page_owner_t owner) {
     if ((numpage >= 0) && (numpage < PAGE_NUMBER)) {
         if (state != NO_CHANGE) {
             table_page[numpage].status = state;
@@ -63,36 +63,38 @@ static void dsm_change_info(int numpage, dsm_page_state_t state, dsm_page_owner_
     }
 }
 
-static dsm_page_owner_t get_owner(int numpage) {
+static dsm_page_owner_t get_owner(long numpage) {
     return table_page[numpage].owner;
 }
 
-static dsm_page_state_t get_status(int numpage) {
+static dsm_page_state_t get_status(long numpage) {
     return table_page[numpage].status;
 }
 
 /* Allocation d'une nouvelle page */
-static void dsm_alloc_page(int numpage) {
+static void dsm_alloc_page(long numpage) {
     char *page_addr = num2address(numpage);
-    mmap(page_addr, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    return;
+    char *res = mmap(page_addr, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if (res == MAP_FAILED) {
+        perror("mmap failed");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /* Changement de la protection d'une page */
-static void dsm_protect_page(int numpage, int prot) {
+static void dsm_protect_page(long numpage, int prot) {
     char *page_addr = num2address(numpage);
     mprotect(page_addr, PAGE_SIZE, prot);
-    return;
 }
 
-static void dsm_free_page(int numpage) {
+static void dsm_free_page(long numpage) {
     char *page_addr = num2address(numpage);
     munmap(page_addr, PAGE_SIZE);
-    return;
 }
 
-static int dsm_send(int dest, void *buf, size_t size, int flag) {
-    int num_send = 0;
+static ssize_t dsm_send(int dest, void *buf, size_t size, int flag) {
+    ssize_t num_send = 0;
     if ((num_send = send(dest, buf, size, flag)) <= 0) {
         perror("dsm_send()");
         fflush(stderr);
@@ -100,8 +102,8 @@ static int dsm_send(int dest, void *buf, size_t size, int flag) {
     return num_send;
 }
 
-static int dsm_recv(int from, void *buf, size_t size, int flag) {
-    int num_rec = 0;
+static ssize_t dsm_recv(int from, void *buf, size_t size, int flag) {
+    ssize_t num_rec = 0;
     if ((num_rec = recv(from, buf, size, flag)) < 0) {
         perror("dsm_recv");
         fflush(stderr);
@@ -123,7 +125,7 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
         dsm_req_t msg = {0, 0, 0};
         for (int i = 0; i < DSM_NODE_NUM; i++) {
             if (POLLFDS[i].revents & POLLIN) {
-                int numread = dsm_recv(POLLFDS[i].fd, &req, sizeof(dsm_req_t), MSG_WAITALL);
+                ssize_t numread = dsm_recv(POLLFDS[i].fd, &req, sizeof(dsm_req_t), MSG_WAITALL);
                 //si le processus distant s'est terminé
                 if (numread == 0) {
                     POLLFDS[i].fd = -1;
@@ -148,7 +150,7 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                         //on change le propriétaire dans la table des pages
                         dsm_change_info(req.page_num, WRITE, req.source);
                         //on envoie la page au processus demandeur
-                        printf("[%i] Page numéro %i envoyée au processus %i\n", DSM_NODE_ID, msg.page_num, req.source);
+                        printf("[%i] Page numéro %ld envoyée au processus %i\n", DSM_NODE_ID, msg.page_num, req.source);
                     } else { //le processus n'est plus propriétaire de la page mais le processus demandeur n'a pas encore mis à jour sa table (cas où plusieurs processus
                         //essaient d'accéder à la même page en même temps
                         msg.page_num = req.page_num;
@@ -159,7 +161,7 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                         dsm_send(PROC_ARRAY[req.source].fd, &msg, sizeof(dsm_req_t), 0);
                     }
                 } else if (req.type == DSM_PAGE) { //si le processus reçoit une page
-                    printf("[%i] Page numéro %i reçue du processus %i\n", DSM_NODE_ID, req.page_num, req.source);
+                    printf("[%i] Page numéro %ld reçue du processus %i\n", DSM_NODE_ID, req.page_num, req.source);
                     //le processus s'alloue la page
                     dsm_alloc_page(req.page_num);
                     //le processus reçoit la page
@@ -167,7 +169,7 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                     dsm_recv(POLLFDS[i].fd, (void *) page, PAGE_SIZE, MSG_WAITALL);
                     //le processus se met propriétaire de la page dans la table des pages
                     dsm_change_info(req.page_num, WRITE, DSM_NODE_ID);
-                    printf("[%i] Je suis propriétaire de la page %i\n", DSM_NODE_ID, req.page_num);
+                    printf("[%i] Je suis propriétaire de la page %ld\n", DSM_NODE_ID, req.page_num);
                     //le processus envoie à tous les autres processus distants qu'il est maintenant propriétaire de la page
                     msg.page_num = req.page_num;
                     msg.source = DSM_NODE_ID;
@@ -182,8 +184,7 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                 } else if (req.type == DSM_NREQ) { //le processus reçoit des changements d'infos de page
                     //le processus met à jour les informations de la table des pages
                     dsm_change_info(req.page_num, WRITE, req.source);
-                    printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source,
-                           req.page_num);
+                    printf("[%i] Le processus %i est maintenant propriétaire de la page %ld\n", DSM_NODE_ID, req.source, req.page_num);
                 } else if (req.type ==
                            DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
                     PROCS_COMPLETED++;
@@ -211,7 +212,7 @@ static void dsm_handler(void *addr) {
     //on gère les erreurs de segmentation
     printf("[%i] Page mémoire inaccessible \n", DSM_NODE_ID);
     //on récupère le numéro de la page qui a provoqué l'erreur
-    int numpage = address2num(addr);
+    long numpage = address2num(addr);
     //on récupère le propriétaire de la page
     dsm_page_owner_t owner = get_owner(numpage);
     //on envoie une demande de page au propriétaire
@@ -220,7 +221,7 @@ static void dsm_handler(void *addr) {
     req.page_num = numpage;
     req.type = DSM_REQ;
     dsm_send(PROC_ARRAY[owner].fd, &req, sizeof(dsm_req_t), 0);
-    printf("[%i] Page numéro %i demandée au processus %i\n", DSM_NODE_ID, numpage, owner);
+    printf("[%i] Page numéro %ld demandée au processus %i\n", DSM_NODE_ID, numpage, owner);
     //le processus reste bloqué le temps que la page ait été envoyée
     sem_wait(&semaphore);
 }
@@ -253,7 +254,6 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
         /* SIGSEGV normal : ne rien faire*/
         return;
     }
-    return;
 }
 
 struct client client_init(char *port, char *machine) {
@@ -308,16 +308,16 @@ char *dsm_init(int argc, char *argv[]) {
     /* Récupération de la valeur des variables d'environnement */
     /* DSMEXEC_FD et MASTER_FD                                 */
     char *MASTER_FD_ptr = getenv("MASTER_FD");
-    int MASTER_FD = atoi(MASTER_FD_ptr);
+    int MASTER_FD = strtol(MASTER_FD_ptr, NULL, 10);
     printf("MASTER_FD = %i\n", MASTER_FD);
 
-    if ((listen(MASTER_FD, SOMAXCONN)) != 0) {
+    if ((listen((int) MASTER_FD, SOMAXCONN)) != 0) {
         perror("listen()\n");
         exit(EXIT_FAILURE);
     }
 
     char *DSMEXEC_FD_ptr = getenv("DSMEXEC_FD");
-    int DSMEXEC_FD = atoi(DSMEXEC_FD_ptr);
+    int DSMEXEC_FD = strtol(DSMEXEC_FD_ptr, NULL, 10);
     printf("DSMEXEC_FD = %i\n", DSMEXEC_FD);
 
     /* reception du nombre de processus dsm envoye */
@@ -337,7 +337,6 @@ char *dsm_init(int argc, char *argv[]) {
     }
     /* initialisation des connexions              */
     /* avec les autres processus : connect/accept */
-    int sfd = 0;
     char port[MAX_STR];
     memset(port, 0, MAX_STR);
     for (int i = 0; i < DSM_NODE_NUM; i++) {
@@ -432,6 +431,5 @@ void dsm_finalize(void) {
     }
     free(PROC_ARRAY);
     free(POLLFDS);
-    return;
 }
 

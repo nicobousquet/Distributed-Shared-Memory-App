@@ -31,9 +31,9 @@ struct client {
     int port;
 };
 
-int dsm_send(int dest, void *buf, size_t size, int flag);
+ssize_t dsm_send(int dest, void *buf, size_t size, int flag);
 
-int dsm_recv(int from, void *buf, size_t size, int flag);
+ssize_t dsm_recv(int from, void *buf, size_t size, int flag);
 
 struct server server_init();
 

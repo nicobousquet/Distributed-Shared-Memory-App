@@ -1,5 +1,4 @@
 #define _GNU_SOURCE
-
 #include "common.h"
 #include <stdio.h>
 #include <unistd.h>

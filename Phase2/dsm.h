@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #define TOP_ADDR    (0x40000000)
 #define PAGE_NUMBER (100)
 #define PAGE_SIZE   (sysconf(_SC_PAGE_SIZE))
@@ -60,6 +58,6 @@ typedef enum {
 
 typedef struct {
     int source;
-    int page_num;
+    long page_num;
     dsm_req_type_t type;
 } dsm_req_t;

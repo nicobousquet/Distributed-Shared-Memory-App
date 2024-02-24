@@ -98,8 +98,8 @@ void read_and_close_pipes(struct pollfd *pollfds, int num_procs, FILE *stream) {
         for (int i = 0; i < num_procs; i++) {
             memset(buff, 0, MAX_STR);
             if (pollfds[i].revents & POLLIN) {
-                int numRead = 0;
-                int offset = 0;
+                ssize_t numRead = 0;
+                ssize_t offset = 0;
                 while ((numRead = read(pollfds[i].fd, buff + offset, 1)) != 0 && offset < MAX_STR) {
                     if (numRead == -1) {
                         perror("read");
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
             proc_array[i].pid = dist_pid;
             /* On recupere le numero de port de la socket */
             /* d'ecoute des processus distants */
-            unsigned int dist_listening_port;
+            int dist_listening_port;
             dsm_recv(connfd, &dist_listening_port, sizeof(int), MSG_WAITALL);
             proc_array[i].connect_info.port_num = dist_listening_port;
             //on affecte un rang à chaque processus distant

@@ -8,8 +8,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-int dsm_send(int dest, void *buf, size_t size, int flag) {
-    int num_send = 0;
+ssize_t dsm_send(int dest, void *buf, size_t size, int flag) {
+    ssize_t num_send = 0;
     if ((num_send = send(dest, buf, size, flag)) <= 0) {
         // si BROKEN PIPE c'est normal pour truc
         if (errno == EPIPE) {
@@ -20,11 +20,12 @@ int dsm_send(int dest, void *buf, size_t size, int flag) {
     return num_send;
 }
 
-int dsm_recv(int from, void *buf, size_t size, int flag) {
-    int num_rec = 0;
+ssize_t dsm_recv(int from, void *buf, size_t size, int flag) {
+    ssize_t num_rec = 0;
     if ((num_rec = recv(from, buf, size, flag)) < 0) {
         perror("dsm_recv");
     }
+
     return num_rec;
 }
 
@@ -63,6 +64,7 @@ struct server server_init() {
     //on récupère le port d'écoute effectif
     server.port = ntohs(my_addr.sin_port);
     freeaddrinfo(result);
+
     return server;
 }
 

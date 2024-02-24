@@ -38,7 +38,7 @@ static char *num2address(long numpage) {
 /* cette fonction permet de recuperer un numero de page */
 /* a partir  d'une adresse  quelconque */
 static long address2num(const char *addr) {
-    return (((intptr_t)(addr - BASE_ADDR)) / (PAGE_SIZE));
+    return (((intptr_t) (addr - BASE_ADDR)) / (PAGE_SIZE));
 }
 
 /* cette fonction permet de recuperer l'adresse d'une page */

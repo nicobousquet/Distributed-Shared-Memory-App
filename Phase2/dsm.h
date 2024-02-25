@@ -58,6 +58,6 @@ typedef enum {
 
 typedef struct {
     int source;
-    long page_num;
+    int page_num;
     dsm_req_type_t type;
 } dsm_req_t;

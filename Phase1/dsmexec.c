@@ -18,7 +18,7 @@ dsm_proc_t *proc_array = NULL;
 /* le nombre de processus effectivement crees */
 volatile int num_procs_creat = 0;
 
-void usage(void) {
+static void usage(void) {
     fprintf(stdout, "Usage : dsmexec machinefile executable arg1 arg2 ...\n");
     fflush(stdout);
     exit(EXIT_FAILURE);

@@ -7,6 +7,7 @@
 /**************************************************************/
 
 #define MAX_STR  (1024)
+
 typedef char maxstr_t[MAX_STR];
 
 /* definition du type des infos */

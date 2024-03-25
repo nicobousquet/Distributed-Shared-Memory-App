@@ -3,6 +3,7 @@
 #define PAGE_SIZE   (sysconf(_SC_PAGE_SIZE))
 #define BASE_ADDR   (TOP_ADDR - (PAGE_NUMBER * PAGE_SIZE))
 #define MAX_STR  (1024)
+
 typedef char maxstr_t[MAX_STR];
 
 typedef enum {

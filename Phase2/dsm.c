@@ -22,6 +22,7 @@ dsm_page_info_t table_page[PAGE_NUMBER];
 pthread_t comm_daemon;
 sem_t semaphore;
 sem_t semaphore_threads_completion;
+pthread_mutex_t mutex;
 
 /* indique l'adresse de debut de la page de numero numpage */
 static char *num2address(int numpage) {
@@ -111,7 +112,7 @@ static ssize_t dsm_recv(int from, void *buf, size_t size, int flag) {
     return num_rec;
 }
 
-static _Noreturn void *dsm_comm_daemon(void *arg) {
+static void *dsm_comm_daemon(void *arg) {
     printf("Waiting for reqs...\n");
     while (1) {
         //on écoute tous les processus distants
@@ -185,12 +186,15 @@ static _Noreturn void *dsm_comm_daemon(void *arg) {
                     //le processus met à jour les informations de la table des pages
                     dsm_change_info(req.page_num, WRITE, req.source);
                     printf("[%i] Le processus %i est maintenant propriétaire de la page %i\n", DSM_NODE_ID, req.source, req.page_num);
-                } else if (req.type ==
-                           DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
+                } else if (req.type == DSM_FINALIZE) { //si le processus reçoit qu'un processus est arrivé à la fin de exemple.c
+                    pthread_mutex_lock(&mutex);
                     PROCS_COMPLETED++;
+
                     if (PROCS_COMPLETED == DSM_NODE_NUM) {
                         sem_post(&semaphore_threads_completion);
                     }
+
+                    pthread_mutex_unlock(&mutex);
                 } else if (req.type == NEW_OWNER) { //le processus reçoit le bon propriétaire de la page
                     msg.type = DSM_REQ;
                     msg.source = DSM_NODE_ID;
@@ -295,14 +299,20 @@ struct client client_init(char *port, char *machine) {
 char *dsm_init(int argc, char *argv[]) {
     struct sigaction act = {0};
     int index;
-    int err = sem_init(&semaphore, 0, 0);
-    if (err != 0) {
+
+    if (sem_init(&semaphore, 0, 0) != 0) {
         perror("sem_init");
+        exit(EXIT_FAILURE);
     }
 
-    int err1 = sem_init(&semaphore_threads_completion, 0, 0);
-    if (err1 != 0) {
+    if (sem_init(&semaphore_threads_completion, 0, 0) != 0) {
         perror("sem_init");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pthread_mutex_init(&mutex, NULL) != 0) {
+        perror("pthread_mutex_init");
+        exit(EXIT_FAILURE);
     }
 
     /* Récupération de la valeur des variables d'environnement */
@@ -400,10 +410,15 @@ void dsm_finalize(void) {
         }
     }
 
+    pthread_mutex_lock(&mutex);
+
     PROCS_COMPLETED++;
+
     if (PROCS_COMPLETED == DSM_NODE_NUM) {
         sem_post(&semaphore_threads_completion);
     }
+
+    pthread_mutex_unlock(&mutex);
 
     //le processus attend que tous les autres processus en soient au même stade que lui pour tuer le thread d'écoute
     sem_wait(&semaphore_threads_completion);
@@ -429,6 +444,7 @@ void dsm_finalize(void) {
             PROC_ARRAY[i].fd = -1;
         }
     }
+
     free(PROC_ARRAY);
     free(POLLFDS);
 }

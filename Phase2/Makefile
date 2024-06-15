@@ -7,7 +7,7 @@ OPTFLAGS = -O0
 
 SHELL = /bin/sh
 
-CFLAGS  = -DREENTRANT -g -std=gnu99
+CFLAGS  = -DREENTRANT -Wunused -Wall -Wextra -Wpedantic -g -std=gnu99
 CCFLAGS = $(CFLAGS)
 LIBS    = -lpthread
 
